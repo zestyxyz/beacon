@@ -5,7 +5,7 @@ async function signal() {
     description: "test description",
     active: true
   };
-  await fetch('http://localhost:8000/relay/inbox', {
+  await fetch('http://localhost:8000/beacon', {
     method: 'PUT',
     body: JSON.stringify(payload),
     headers: {
