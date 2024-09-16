@@ -8,5 +8,6 @@
   "keywords": [],
   "author": "Daniel Adams <msub2official@gmail.com>",
   "license": "MIT",
-  "description": "Prototype for SIG beacon."
+  "description": "Prototype for SIG beacon.",
+  "type": "module"
 }
