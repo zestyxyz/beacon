@@ -2,9 +2,10 @@ export default class Beacon {
   relay;
   specifiedName;
   specifiedDescription;
+  browserContext = 'document' in globalThis;
 
   constructor(relay, override = null) {
-    if (!document) {
+    if (!this.browserContext) {
       console.error("This beacon can only be used in a browser context!");
       return;
     }
@@ -51,7 +52,7 @@ export default class Beacon {
   }
 
   async signal() {
-    if (!document) {
+    if (!this.browserContext) {
       console.error("This beacon can only be used in a browser context!");
       return;
     }
