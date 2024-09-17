@@ -4,6 +4,10 @@ export default class Beacon {
   specifiedDescription;
 
   constructor(relay, override = null) {
+    if (!document) {
+      console.error("This beacon can only be used in a browser context!");
+      return;
+    }
     if (!relay) {
       console.error("You must specify a relay URL for the beacon to connect to!");
       return;
@@ -47,6 +51,14 @@ export default class Beacon {
   }
 
   async signal() {
+    if (!document) {
+      console.error("This beacon can only be used in a browser context!");
+      return;
+    }
+    if (!relay) {
+      console.error("You must specify a relay URL for the beacon to connect to!");
+      return;
+    }
     const url = this.getUrl();
     const name = this.getName();
     const description = this.getDescription();
