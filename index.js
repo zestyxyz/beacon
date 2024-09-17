@@ -1,9 +1,19 @@
 export default class Beacon {
+  /** @type {string} The relay URL that this beacon will connect to */
   relay;
+  /** @type {string} The name of the app, if specified. Overrides page checks. */
   specifiedName;
+  /** @type {string} The description of the app, if specified. Overrides page checks. */
   specifiedDescription;
+  /** @type {boolean} Whether the beacon is currently in a browser context */
   browserContext = 'document' in globalThis;
 
+  /**
+   *
+   * @param {string} relay The relay URL that this beacon will connect to
+   * @param {{ name?: string, description?: string }} override Manual overrides for name and description. Will be passed directly to the relay when signalling.
+   * @returns {Beacon}
+   */
   constructor(relay, override = null) {
     if (!this.browserContext) {
       console.error("This beacon can only be used in a browser context!");
@@ -20,6 +30,10 @@ export default class Beacon {
     }
   }
 
+  /**
+   * Retrieves the canonical URL from meta tag if specified, otherwise the current document URL
+   * @returns {string}
+   */
   getUrl() {
     const meta = document.head.querySelector('meta[data-canonical-url]');
     if (meta) {
@@ -29,6 +43,10 @@ export default class Beacon {
     }
   }
 
+  /**
+   * Retrieves app name from meta tag, returning document title if not found
+   * @returns {string}
+   */
   getName() {
     if (this.specifiedName) return this.specifiedName;
 
@@ -40,6 +58,10 @@ export default class Beacon {
     }
   }
 
+  /**
+   * Retrieves app description from meta tag, returning empty string if not found
+   * @returns {string}
+   */
   getDescription() {
     if (this.specifiedDescription) return this.specifiedDescription;
 
@@ -51,12 +73,16 @@ export default class Beacon {
     }
   }
 
+  /**
+   * Sends a signal to the relay with the app's current metadata
+   * @returns {Promise<void>}
+   */
   async signal() {
     if (!this.browserContext) {
       console.error("This beacon can only be used in a browser context!");
       return;
     }
-    if (!relay) {
+    if (!this.relay) {
       console.error("You must specify a relay URL for the beacon to connect to!");
       return;
     }
