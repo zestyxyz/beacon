@@ -7,6 +7,8 @@ export default class Beacon {
   specifiedDescription;
   /** @type {boolean} Whether the beacon is currently in a browser context */
   browserContext = 'document' in globalThis;
+  /** @type {Document} The top-level HTML document, if we detect we are running in an iframe. */
+  topLevelDocument = null;
 
   /**
    *
@@ -35,11 +37,12 @@ export default class Beacon {
    * @returns {string}
    */
   getUrl() {
+    const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[data-canonical-url]');
     if (meta) {
       return meta.getAttribute('data-canonical-url');
     } else {
-      return document.location.href;
+      return this.topLevelDocument ? window.top.location.href : window.document.location.href;
     }
   }
 
@@ -50,6 +53,7 @@ export default class Beacon {
   getName() {
     if (this.specifiedName) return this.specifiedName;
 
+    const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[name="application-name"]');
     if (meta) {
       return meta.getAttribute('content');
@@ -65,6 +69,7 @@ export default class Beacon {
   getDescription() {
     if (this.specifiedDescription) return this.specifiedDescription;
 
+    const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[name="description"]');
     if (meta) {
       return meta.getAttribute('content');
@@ -85,6 +90,19 @@ export default class Beacon {
     if (!this.relay) {
       console.error("You must specify a relay URL for the beacon to connect to!");
       return;
+    }
+    if (document.readyState !== 'complete') {
+      await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+    }
+    // Check if we are running in an iframe. If so, try to get the top-level document.
+    // Unfortunately, this will only work if the frames are same-origin.
+    if (window.self !== window.top) {
+      try {
+        this.topLevelDocument = window.top.document;
+      } catch {
+        console.error("Cannot get URL of cross-origin frame, aborting.");
+        return;
+      }
     }
     const url = this.getUrl();
     const name = this.getName();
