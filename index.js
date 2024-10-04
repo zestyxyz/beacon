@@ -112,6 +112,24 @@ export default class Beacon {
   }
 
   /**
+   * Checks whether this page contains adult content.
+   * @returns {boolean}
+   */
+  isAdult() {
+    const document = this.topLevelDocument ?? window.document;
+    const meta = document.head.querySelector('meta[name="rating"]');
+    if (meta) {
+      const meta1 = meta.getAttribute('content') === 'adult';
+      // Comes from https://www.rtalabel.org/?content=howto
+      const meta2 = meta.getAttribute('content') === 'RTA-5042-1996-1400-1577-RTA';
+      return meta1 || meta2;
+    }
+
+    // At this point, ideally the website has accurately indicated its content rating.
+    // If not, it will need to be filtered manually on the relay side.
+    return false;
+  }
+  /**
    * Sends a signal to the relay with the app's current metadata
    * @returns {Promise<void>}
    */
@@ -141,6 +159,7 @@ export default class Beacon {
     const name = this.getName();
     const description = this.getDescription();
     const image = this.getImage();
+    const adult = this.isAdult();
     if (!url || !name || !description || !image) {
       console.error("Missing required metadata! Check your <meta> tags for the following attributes: data-canonical-url, name=application-name, name=description, og:image");
       return;
@@ -151,6 +170,7 @@ export default class Beacon {
       description,
       active: true,
       image,
+      adult,
     };
     await fetch(`${this.relay}/beacon`, {
       method: 'PUT',
