@@ -38,8 +38,11 @@ export default class Beacon {
    */
   getUrl() {
     const document = this.topLevelDocument ?? window.document;
+    const og = document.head.querySelector('meta[property="og:url"]');
     const meta = document.head.querySelector('meta[data-canonical-url]');
-    if (meta) {
+    if (og) {
+      return og.getAttribute('content');
+    } else if (meta) {
       return meta.getAttribute('data-canonical-url');
     } else {
       return this.topLevelDocument ? window.top.location.href : window.document.location.href;
@@ -71,10 +74,40 @@ export default class Beacon {
 
     const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[name="description"]');
+    const og = document.head.querySelector('meta[property="og:description"]');
+    if (meta && meta.hasAttribute('description')) {
+      // This is technically incorrect but there are instances of this in the wild,
+      // so check for this first.
+      return meta.getAttribute('description');
+    } else if (meta) {
+      return meta.getAttribute('content');
+    } else if (og) {
+      return og.getAttribute('content');
+    } else {
+      return "";
+    }
+  }
+
+  /**
+   * Retrieves an image relevant to the page content, either from the OpenGraph image
+   * or a snapshot of the canvas on initial page load.
+   * @returns {string}
+   */
+  getImage() {
+    const document = this.topLevelDocument ?? window.document;
+    const meta = document.head.querySelector('meta[property="og:image"]');
     if (meta) {
       return meta.getAttribute('content');
     } else {
-      return "";
+      // Check for canvas on page
+      // TODO: Potentially wait for one via MutationObserver if canvas is inserted dynamically
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        return canvas.toDataURL();
+      } else {
+        // Placeholder in the unlikely event there is no way to obtain an image from the page
+        return "#";
+      }
     }
   }
 
@@ -107,15 +140,17 @@ export default class Beacon {
     const url = this.getUrl();
     const name = this.getName();
     const description = this.getDescription();
-    if (!url || !name || !description) {
-      console.error("Missing required metadata! Check your <meta> tags for the following attributes: data-canonical-url, name=application-name, name=description");
+    const image = this.getImage();
+    if (!url || !name || !description || !image) {
+      console.error("Missing required metadata! Check your <meta> tags for the following attributes: data-canonical-url, name=application-name, name=description, og:image");
       return;
     }
     const payload = {
       url,
       name,
       description,
-      active: true
+      active: true,
+      image,
     };
     await fetch(`${this.relay}/beacon`, {
       method: 'PUT',

@@ -3,15 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="This is the first app to be added to the relay!">
-  <meta name="application-name" content="Test Beacon">
-  <meta data-canonical-url="http://localhost:8080">
+  <meta name="description" content="This app has a an image!">
+  <meta name="application-name" content="Beacon Image Test">
+  <meta data-canonical-url="http://localhost:8080/imagetest">
+  <meta property="og:image" content="https://picsum.photos/id/27/367/267">
   <title>Beacon Test Page</title>
   <link rel="icon" href="data:,">
 </head>
 <body>
+  <canvas id="canvas" width="400" height="400"></canvas>
   <script type="module">
     import Beacon from '../index.js';
+
+    // Get the canvas element and its drawing context
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set the background to white
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Set the color for the triangle
+    ctx.fillStyle = 'red';
+
+    // Begin the path for the triangle
+    ctx.beginPath();
+    ctx.moveTo(200, 50);   // Top vertex
+    ctx.lineTo(100, 350);  // Bottom-left vertex
+    ctx.lineTo(300, 350);  // Bottom-right vertex
+    ctx.closePath();       // Connects back to the start point
+
+    // Fill the triangle with red
+    ctx.fill();
+
     const beacon = new Beacon('http://localhost:8000');
     await beacon.signal();
   </script>
