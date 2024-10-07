@@ -129,6 +129,22 @@ export default class Beacon {
     // If not, it will need to be filtered manually on the relay side.
     return false;
   }
+
+  /**
+   * Retrieves any specified keywords for the page, which in turn will assist with filtering
+   * on the relay side.
+   * @returns {string}
+   */
+  getTags() {
+    const document = this.topLevelDocument ?? window.document;
+    const meta = document.head.querySelector('meta[name="keywords"]');
+    if (meta) {
+      return meta.getAttribute('content');
+    } else {
+      return "";
+    }
+  }
+
   /**
    * Sends a signal to the relay with the app's current metadata
    * @returns {Promise<void>}
@@ -160,6 +176,7 @@ export default class Beacon {
     const description = this.getDescription();
     const image = this.getImage();
     const adult = this.isAdult();
+    const tags = this.getTags();
     if (!url || !name || !description || !image) {
       console.error("Missing required metadata! Check your <meta> tags for the following attributes: data-canonical-url, name=application-name, name=description, og:image");
       return;
@@ -171,6 +188,7 @@ export default class Beacon {
       active: true,
       image,
       adult,
+      tags,
     };
     await fetch(`${this.relay}/beacon`, {
       method: 'PUT',
