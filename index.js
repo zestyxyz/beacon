@@ -99,14 +99,14 @@ export default class Beacon {
 
     // Give enough time for page+canvas contents to load
     await new Promise(resolve => setTimeout(resolve, 5000));
-    const aframeFallback = document.querySelector('a-scene').components.screenshot;
+    const aframeFallback = document.querySelector('a-scene')?.components.screenshot;
 
     if (meta) {
       return meta.getAttribute('content');
     } else if (aframeFallback) {
       // A-Frame inserts a component by default that allows you to save the current scene
       // in an equirectangular or perspective screenshot. We use perspective here for less warping
-      // and reduce the dimensions, as it defualts to 4096 x 2048
+      // and reduce the dimensions, as it defaults to 4096 x 2048
       const aScene = document.querySelector('a-scene');
       let oldWidth = aframeFallback.width;
       let oldHeight = aframeFallback.height;
