@@ -91,23 +91,36 @@ export default class Beacon {
   /**
    * Retrieves an image relevant to the page content, either from the OpenGraph image
    * or a snapshot of the canvas on initial page load.
-   * @returns {string}
+   * @returns {Promise<string>}
    */
-  getImage() {
+  async getImage() {
     const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[property="og:image"]');
+
+    // Give enough time for page+canvas contents to load
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    const aframeFallback = document.querySelector('a-scene').components.screenshot;
+
     if (meta) {
       return meta.getAttribute('content');
+    } else if (aframeFallback) {
+      // A-Frame inserts a component by default that allows you to save the current scene
+      // in an equirectangular or perspective screenshot. We use perspective here for less warping
+      // and reduce the dimensions, as it defualts to 4096 x 2048
+      const aScene = document.querySelector('a-scene');
+      let oldWidth = aframeFallback.width;
+      let oldHeight = aframeFallback.height;
+      aScene.setAttribute("screenshot", "width: 2048; height: 1024;");
+      const canvas = aframeFallback.getCanvas('perspective');
+      const dataURL = canvas.toDataURL();
+      // Restore initial values for screenshot after image is taken
+      aScene.setAttribute("screenshot", `width: ${oldWidth}; height: ${oldHeight};`);
+      return dataURL;
     } else {
-      // Check for canvas on page
-      // TODO: Potentially wait for one via MutationObserver if canvas is inserted dynamically
-      const canvas = document.querySelector('canvas');
-      if (canvas) {
-        return canvas.toDataURL();
-      } else {
-        // Placeholder in the unlikely event there is no way to obtain an image from the page
-        return "#";
-      }
+      // TODO: Find other ways of getting a fallback screenshot
+      // HTMLCanvasElement.toDataURL() does not work cleanly with WebGL contexts due to the default rendering
+      // behavior, so it cannot be relied on solely as a fallback.
+      return "#";
     }
   }
 
@@ -174,7 +187,7 @@ export default class Beacon {
     const url = this.getUrl();
     const name = this.getName();
     const description = this.getDescription();
-    const image = this.getImage();
+    const image = await this.getImage();
     const adult = this.isAdult();
     const tags = this.getTags();
     if (!url || !name || !description || !image) {
