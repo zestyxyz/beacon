@@ -1,6 +1,6 @@
-# SIG Beacon
+# Distributed Spatial Internet Graph Beacon
 
-This is a prototype implementation of a Spatial Internet Graph beacon.
+Adding the beacon will get your spatial web app discovered across a distributed network of spatial internet graphs.
 
 ## Current Functionality
 
