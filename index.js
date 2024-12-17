@@ -102,7 +102,17 @@ export default class Beacon {
     const aframeFallback = document.querySelector('a-scene')?.components.screenshot;
 
     if (meta) {
-      return meta.getAttribute('content');
+      let content = meta.getAttribute('content');
+      if (content.length === 0) {
+        // Content attribute is blank for some reason
+        return "#";
+      } else if (content.startsWith("http")) {
+        // Content is an absolute URL, pass on as is
+        return content;
+      } else {
+        // Content is a relative URL, concatenate with current URL
+        return new URL(content, this.getUrl()).href;
+      }
     } else if (aframeFallback) {
       // A-Frame inserts a component by default that allows you to save the current scene
       // in an equirectangular or perspective screenshot. We use perspective here for less warping
