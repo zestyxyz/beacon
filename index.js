@@ -5,6 +5,8 @@ export default class Beacon {
   specifiedName;
   /** @type {string} The description of the app, if specified. Overrides page checks. */
   specifiedDescription;
+  /** @type {string} The canonical URL of the app, if specified. Overrides page checks. */
+  specifiedUrl;
   /** @type {boolean} Whether the beacon is currently in a browser context */
   browserContext = 'document' in globalThis;
   /** @type {Document} The top-level HTML document, if we detect we are running in an iframe. */
@@ -29,6 +31,7 @@ export default class Beacon {
     if (override) {
       this.specifiedName = override.name ?? null;
       this.specifiedDescription = override.description ?? null;
+      this.specifiedUrl = override.url ?? null;
     }
   }
 
@@ -37,6 +40,8 @@ export default class Beacon {
    * @returns {string}
    */
   getUrl() {
+    if (this.specifiedUrl) return this.specifiedUrl;
+
     const document = this.topLevelDocument ?? window.document;
     const og = document.head.querySelector('meta[property="og:url"]');
     const meta = document.head.querySelector('meta[data-canonical-url]');
