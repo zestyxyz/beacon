@@ -13,7 +13,9 @@ To ensure the beacon picks up all the relevant information, make sure your setup
 ### JavaScript
 
 ```js
-import Beacon from 'sig-beacon';
+import Beacon from 'sig-beacon'; // NPM
+/* OR */
+import Beacon from "https://cdn.jsdelivr.net/npm/sig-beacon@0.0.10/index.js"; // CDN
 
 const beacon = new Beacon("<BASE_RELAY_URL>");
 await beacon.signal();
@@ -31,6 +33,7 @@ Ensure the relay URL is valid and without subdirectories, e.g. `https://relay.ze
     <meta name="keywords" content="<comma,separated,keywords>">
     <meta property="og:url" content="<YOUR_APPLICATION_URL>">
     <meta property="og:image" content="<YOUR_APPLICATION_IMAGE>">
+    <script src="your_script_with_beacon_code.js" type="module"></script>
     <!-- Any other tags in your page head -->
   </head>
   <body>
