@@ -15,7 +15,7 @@ To ensure the beacon picks up all the relevant information, make sure your setup
 ```js
 import Beacon from 'sig-beacon'; // NPM
 /* OR */
-import Beacon from "https://cdn.jsdelivr.net/npm/sig-beacon@0.0.10/index.js"; // CDN
+import Beacon from "https://cdn.jsdelivr.net/npm/sig-beacon@0.0.11/index.js"; // CDN
 
 const beacon = new Beacon("<BASE_RELAY_URL>");
 await beacon.signal();
