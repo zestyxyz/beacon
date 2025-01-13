@@ -5,6 +5,12 @@ export default class Beacon {
   specifiedName;
   /** @type {string} The description of the app, if specified. Overrides page checks. */
   specifiedDescription;
+  /** @type {string} The canonical URL of the app, if specified. Overrides page checks. */
+  specifiedUrl;
+  /** @type {string} The preview image of the app, if specified. Overrides page checks. */
+  specifiedImage;
+  /** @type {string} The tags for the app, if specified. Overrides page checks. */
+  specifiedTags;
   /** @type {boolean} Whether the beacon is currently in a browser context */
   browserContext = 'document' in globalThis;
   /** @type {Document} The top-level HTML document, if we detect we are running in an iframe. */
@@ -29,6 +35,9 @@ export default class Beacon {
     if (override) {
       this.specifiedName = override.name ?? null;
       this.specifiedDescription = override.description ?? null;
+      this.specifiedUrl = override.url ?? null;
+      this.specifiedImage = override.image ?? null;
+      this.specifiedTags = override.tags ?? null;
     }
   }
 
@@ -37,6 +46,8 @@ export default class Beacon {
    * @returns {string}
    */
   getUrl() {
+    if (this.specifiedUrl) return this.specifiedUrl;
+
     const document = this.topLevelDocument ?? window.document;
     const og = document.head.querySelector('meta[property="og:url"]');
     const meta = document.head.querySelector('meta[data-canonical-url]');
@@ -94,6 +105,8 @@ export default class Beacon {
    * @returns {Promise<string>}
    */
   async getImage() {
+    if (this.specifiedImage) return this.specifiedImage;
+
     const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[property="og:image"]');
 
@@ -159,6 +172,8 @@ export default class Beacon {
    * @returns {string}
    */
   getTags() {
+    if (this.specifiedTags) return this.specifiedTags;
+
     const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[name="keywords"]');
     if (meta) {
