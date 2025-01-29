@@ -39,6 +39,8 @@ export default class Beacon {
       this.specifiedImage = override.image ?? null;
       this.specifiedTags = override.tags ?? null;
     }
+
+    this.sessionId = crypto.randomUUID();
   }
 
   /**
@@ -235,5 +237,23 @@ export default class Beacon {
         'Content-Type': 'application/json'
       }
     });
+    const heartbeat = setInterval(async () => {
+      try {
+        await fetch(`${this.relay}/session`, {
+          method: 'POST',
+          body: JSON.stringify({
+            session_id: this.sessionId,
+            url,
+            timestamp: Date.now(),
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      } catch {
+        console.error("Failed to send heartbeat signal! Relay server is not reachable.")
+        clearInterval(heartbeat);
+      }
+    }, 5000);
   }
 }
