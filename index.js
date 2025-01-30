@@ -1,3 +1,21 @@
+/**
+ * Generates a random v4 UUID. In scenarios where window.crypto is not available,
+ * falls back to a manual generation method using Math.random(). We don't necessarily need
+ * to ensure it's cryptographically random, so the use of Math.random() is acceptable.
+ * @returns {string} A v4 UUID string
+ */
+function generateRandomUUID() {
+  if (crypto && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const rand = Math.floor(Math.random() * 16); // Generate random value from 0-15
+    const digit = c == 'x' ? rand : (rand & 0x3 | 0x8); // y must be 8, 9, A, or B
+    return digit.toString(16);
+  });
+}
+
 export default class Beacon {
   /** @type {string} The relay URL that this beacon will connect to */
   relay;
@@ -40,7 +58,7 @@ export default class Beacon {
       this.specifiedTags = override.tags ?? null;
     }
 
-    this.sessionId = crypto.randomUUID();
+    this.sessionId = generateRandomUUID();
   }
 
   /**
