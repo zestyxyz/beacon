@@ -15,23 +15,23 @@ Beacons allow 3D/spatial web applications to announce themselves to Relay discov
 ### NPM
 
 ```bash
-npm install sig-beacon
+npm install @zestyxyz/beacon
 ```
 
 ```js
-import Beacon from 'sig-beacon';
+import Beacon from '@zestyxyz/beacon';
 ```
 
 ### CDN
 
 ```js
-import Beacon from "https://cdn.jsdelivr.net/npm/sig-beacon@0.0.14/index.js";
+import Beacon from "https://cdn.jsdelivr.net/npm/@zestyxyz/beacon/index.js";
 ```
 
 ## Quick Start
 
 ```js
-import Beacon from 'sig-beacon';
+import Beacon from '@zestyxyz/beacon';
 
 const beacon = new Beacon("https://relay.zesty.xyz");
 await beacon.signal();
@@ -69,7 +69,7 @@ The beacon automatically reads metadata from your page's `<head>`. Add these met
 | Name | `application-name` | `document.title` |
 | Description | `description` | `og:description` |
 | URL | `og:url` | `document.location` |
-| Image | `og:image` | A-Frame screenshot (if available) |
+| Image | `og:image` | A-Frame screenshot → Canvas capture → None |
 | Tags | `keywords` | Empty string |
 | Adult | `rating="adult"` | `false` |
 
@@ -172,7 +172,7 @@ For A-Frame scenes without an `og:image` meta tag, the beacon will automatically
   <!-- Your 3D content here -->
 
   <script type="module">
-    import Beacon from "https://cdn.jsdelivr.net/npm/sig-beacon@0.0.14/index.js";
+    import Beacon from "https://cdn.jsdelivr.net/npm/@zestyxyz/beacon/index.js";
 
     const beacon = new Beacon("https://relay.zesty.xyz");
     await beacon.signal();
