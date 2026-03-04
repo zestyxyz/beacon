@@ -1,5 +1,5 @@
 {
-  "name": "sig-beacon",
+  "name": "@zestyxyz/beacon",
   "version": "0.0.15",
   "main": "index.js",
   "scripts": {
