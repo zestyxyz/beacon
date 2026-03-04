@@ -178,12 +178,84 @@ export default class Beacon {
       // Restore initial values for screenshot after image is taken
       aScene.setAttribute("screenshot", `width: ${oldWidth}; height: ${oldHeight};`);
       return dataURL;
-    } else {
-      // TODO: Find other ways of getting a fallback screenshot
-      // HTMLCanvasElement.toDataURL() does not work cleanly with WebGL contexts due to the default rendering
-      // behavior, so it cannot be relied on solely as a fallback.
-      return "#";
     }
+
+    // Generic canvas capture fallback
+    const canvas = this.findBestCanvas(document);
+    if (canvas) {
+      const captured = await this.captureCanvas(canvas);
+      if (captured) return captured;
+    }
+
+    return "#";
+  }
+
+  /**
+   * Finds the largest canvas element on the page by area.
+   * @param {Document} document
+   * @returns {HTMLCanvasElement|null}
+   */
+  findBestCanvas(document) {
+    const canvases = document.querySelectorAll('canvas');
+    if (canvases.length === 0) return null;
+    let best = null;
+    let bestArea = 0;
+    for (const c of canvases) {
+      const area = c.width * c.height;
+      if (area > bestArea) {
+        bestArea = area;
+        best = c;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Captures a canvas element as a JPEG data URL, with a two-attempt strategy
+   * to handle WebGL contexts that don't preserve the drawing buffer.
+   * @param {HTMLCanvasElement} canvas
+   * @returns {Promise<string|null>}
+   */
+  async captureCanvas(canvas) {
+    const capture = (source) => {
+      try {
+        const maxWidth = 800;
+        const scale = Math.min(1, maxWidth / source.width);
+        const w = Math.floor(source.width * scale);
+        const h = Math.floor(source.height * scale);
+        const temp = document.createElement('canvas');
+        temp.width = w;
+        temp.height = h;
+        const ctx = temp.getContext('2d');
+        ctx.drawImage(source, 0, 0, w, h);
+        return temp.toDataURL('image/jpeg', 0.8);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    // Attempt 1: Direct capture
+    let dataURL = capture(canvas);
+    if (this.isValidCapture(dataURL)) return dataURL;
+
+    // Attempt 2: Capture on next animation frame (works for preserveDrawingBuffer: false)
+    dataURL = await new Promise(resolve => {
+      requestAnimationFrame(() => resolve(capture(canvas)));
+    });
+    if (this.isValidCapture(dataURL)) return dataURL;
+
+    return null;
+  }
+
+  /**
+   * Checks whether a captured data URL contains meaningful image data.
+   * Blank canvases compress to very small JPEGs (<5KB / ~6800 chars base64),
+   * while real 3D scenes at 800px wide produce much larger images.
+   * @param {string|null} dataURL
+   * @returns {boolean}
+   */
+  isValidCapture(dataURL) {
+    return dataURL != null && dataURL.length > 10000;
   }
 
   /**
