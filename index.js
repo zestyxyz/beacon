@@ -323,29 +323,32 @@ export default class Beacon {
     const url = this.getUrl();
     const name = this.getName();
     const description = this.getDescription();
-    const image = await this.getImage();
     const adult = this.isAdult();
     const tags = this.getTags();
-    if (!url || !name || !description || !image) {
+    if (!url || !name || !description) {
       console.error("Missing required metadata! Check your <meta> tags for the following attributes: data-canonical-url, name=application-name, name=description, og:image");
       return;
     }
-    const payload = {
+    const basePayload = {
       url,
       name,
       description,
       active: true,
-      image,
       adult,
       tags,
     };
-    await fetch(`${this.relay}/beacon`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    const sendBeacon = async () => {
+      const freshImage = await this.getImage();
+      await fetch(`${this.relay}/beacon`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...basePayload, image: freshImage }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    };
+    await sendBeacon();
+    setInterval(sendBeacon, 24 * 60 * 60 * 1000);
     const heartbeat = setInterval(async () => {
       try {
         await fetch(`${this.relay}/session`, {
