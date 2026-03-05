@@ -72,6 +72,7 @@ export default class Beacon {
     }
 
     this.sessionId = generateRandomUUID();
+    console.log("Zesty Beacon v0.0.18");
   }
 
   /**
@@ -81,21 +82,11 @@ export default class Beacon {
   getUrl() {
     if (this.specifiedUrl) return this.specifiedUrl;
 
-    const document = this.topLevelDocument ?? window.document;
-    const og = document.head.querySelector('meta[property="og:url"]');
-    const meta = document.head.querySelector('meta[data-canonical-url]');
-    if (og) {
-      return og.getAttribute('content');
-    } else if (meta) {
-      return meta.getAttribute('data-canonical-url');
+    const location = this.topLevelDocument ? window.top.location : window.document.location;
+    if (this.stripQueryParams) {
+      return location.protocol + '//' + location.host + location.pathname;
     } else {
-      const location =  this.topLevelDocument ? window.top.location : window.document.location;
-      if (this.stripQueryParams) {
-        const strippedUrl = location.protocol + '//' + location.host + location.pathname;
-        return strippedUrl
-      } else {
-        return location.href;
-      }
+      return location.href;
     }
   }
 
@@ -140,7 +131,7 @@ export default class Beacon {
 
   /**
    * Retrieves an image relevant to the page content, either from the OpenGraph image
-   * or a snapshot of the canvas on initial page load.
+   * or a snapshot of the canvas once the 3D world has rendered.
    * @returns {Promise<string>}
    */
   async getImage() {
@@ -148,10 +139,6 @@ export default class Beacon {
 
     const document = this.topLevelDocument ?? window.document;
     const meta = document.head.querySelector('meta[property="og:image"]');
-
-    // Give enough time for page+canvas contents to load
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    const aframeFallback = document.querySelector('a-scene')?.components.screenshot;
 
     if (meta) {
       let content = meta.getAttribute('content');
@@ -165,26 +152,44 @@ export default class Beacon {
         // Content is a relative URL, concatenate with current URL
         return new URL(content, this.getUrl()).href;
       }
-    } else if (aframeFallback) {
-      // A-Frame inserts a component by default that allows you to save the current scene
-      // in an equirectangular or perspective screenshot. We use perspective here for less warping
-      // and reduce the dimensions, as it defaults to 4096 x 2048
-      const aScene = document.querySelector('a-scene');
-      let oldWidth = aframeFallback.width;
-      let oldHeight = aframeFallback.height;
-      aScene.setAttribute("screenshot", "width: 2048; height: 1024;");
-      const canvas = aframeFallback.getCanvas('perspective');
-      const dataURL = canvas.toDataURL();
-      // Restore initial values for screenshot after image is taken
-      aScene.setAttribute("screenshot", `width: ${oldWidth}; height: ${oldHeight};`);
-      return dataURL;
     }
 
-    // Generic canvas capture fallback
-    const canvas = this.findBestCanvas(document);
-    if (canvas) {
-      const captured = await this.captureCanvas(canvas);
-      if (captured) return captured;
+    // For A-Frame scenes, wait for the scene to load before capturing
+    const aScene = document.querySelector('a-scene');
+    if (aScene) {
+      await new Promise(resolve => {
+        if (aScene.hasLoaded) {
+          resolve();
+        } else {
+          aScene.addEventListener('loaded', resolve, { once: true });
+        }
+      });
+      const aframeFallback = aScene.components.screenshot;
+      if (aframeFallback) {
+        // A-Frame inserts a component by default that allows you to save the current scene
+        // in an equirectangular or perspective screenshot. We use perspective here for less warping
+        // and reduce the dimensions, as it defaults to 4096 x 2048
+        let oldWidth = aframeFallback.width;
+        let oldHeight = aframeFallback.height;
+        aScene.setAttribute("screenshot", "width: 2048; height: 1024;");
+        const canvas = aframeFallback.getCanvas('perspective');
+        const dataURL = canvas.toDataURL();
+        // Restore initial values for screenshot after image is taken
+        aScene.setAttribute("screenshot", `width: ${oldWidth}; height: ${oldHeight};`);
+        return dataURL;
+      }
+    }
+
+    // Generic canvas capture: poll until the canvas has real rendered content,
+    // trying every 2 seconds for up to 30 seconds total.
+    const maxAttempts = 15;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const canvas = this.findBestCanvas(document);
+      if (canvas) {
+        const captured = await this.captureCanvas(canvas);
+        if (this.isValidCapture(captured)) return captured;
+      }
     }
 
     return "#";
